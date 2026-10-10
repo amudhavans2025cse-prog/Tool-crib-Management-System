@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Tool Catalog & Search (FR1){% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="bi bi-tools me-2"></i>Tool Crib Inventory Catalog
+                </h3>
+                <p class="text-muted mb-0">FR1 — Search and inspect tools by ID, title/name, category, and real-time availability.</p>
+            </div>
+            {% if session_role == 'Member' %}
+            <a href="{{ url_for('member.requests_list') }}" class="btn btn-outline-primary">
+                <i class="bi bi-journal-check me-1"></i> View My Requests
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Form -->
+<div class="card card-custom p-4 mb-4">
+    <form method="GET" action="{{ url_for('member.inventory') }}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small fw-bold text-muted">Search by ID or Tool Name</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="e.g. I101 or Tool A" value="{{ current_query }}">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Filter by Category</label>
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Availability</label>
+            <select name="availability" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="1" {% if current_availability == '1' %}selected{% endif %}>Available</option>
+                <option value="0" {% if current_availability == '0' %}selected{% endif %}>Unavailable</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">
+                <i class="bi bi-funnel me-1"></i> Filter
+            </button>
+            <a href="{{ url_for('member.inventory') }}" class="btn btn-outline-secondary" title="Reset Filters">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Inventory Table -->
+<div class="card card-custom">
+    <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-list-columns-reverse me-2 text-primary"></i>Tool Records ({{ tools | length }} items)</span>
+        <span class="text-muted small">Standard initial records: I101, I102, I103, I104</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-custom table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Tool ID</th>
+                        <th>Tool Name</th>
+                        <th>Category</th>
+                        <th style="width: 220px;">Availability & Status</th>
+                        <th style="width: 160px;" class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tool in tools %}
+                    <tr>
+                        <td>
+                            <code class="fw-bold fs-6 text-primary">{{ tool.id }}</code>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">{{ tool.title }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-secondary border">{{ tool.category }}</span>
+                        </td>
+                        <td>
+                            {% if tool.available == 1 %}
+                            <span class="badge-available">
+                                <i class="bi bi-check-circle me-1"></i> Available
+                            </span>
+                            {% else %}
+                            <span class="badge-unavailable">
+                                <i class="bi bi-x-circle me-1"></i> Unavailable
+                            </span>
+                            {% if tool.current_borrower_name %}
+                            <small class="d-block text-muted mt-1">
+                                <i class="bi bi-person me-1"></i>Borrowed by: <strong>{{ tool.current_borrower_name }}</strong>
+                                <br><span class="text-secondary">Due: {{ tool.current_due_date }}</span>
+                            </small>
+                            {% elif tool.id == 'I103' %}
+                            <small class="d-block text-muted mt-1">
+                                <i class="bi bi-wrench-adjustable me-1"></i>Diagnostics / Calibration
+                            </small>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if session_role == 'Member' %}
+                                {% if tool.available == 1 %}
+                                <form action="{{ url_for('member.create_request') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="item_id" value="{{ tool.id }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-plus-circle me-1"></i> Request Tool
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-secondary" disabled title="Tool is unavailable">
+                                    Unavailable
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                {% if tool.active_loan_id %}
+                                <a href="{{ url_for('member.loan_detail', loan_id=tool.active_loan_id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i> View Loan
+                                </a>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">Master Record</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block text-secondary mb-2"></i>
+                            No tools match your search criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

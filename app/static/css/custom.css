@@ -1,0 +1,190 @@
+/* Tool Crib Management System - Blue & White Theme */
+:root {
+    --primary-blue: #0056b3;
+    --primary-blue-dark: #003d82;
+    --primary-blue-light: #e7f1ff;
+    --accent-blue: #0d6efd;
+    --accent-teal: #0aa2c0;
+    --bg-light: #f8fafc;
+    --card-border: #e2e8f0;
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --badge-available-bg: #d1fae5;
+    --badge-available-text: #065f46;
+    --badge-unavailable-bg: #fee2e2;
+    --badge-unavailable-text: #991b1b;
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar-custom {
+    background: linear-gradient(135deg, #004b99 0%, #0066cc 100%);
+    box-shadow: 0 4px 12px rgba(0, 86, 179, 0.15);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    font-size: 1.25rem;
+}
+
+.nav-link {
+    font-weight: 500;
+    padding: 0.5rem 0.85rem !important;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Main Content */
+.main-wrapper {
+    flex: 1 0 auto;
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+}
+
+/* Cards */
+.card-custom {
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-custom:hover {
+    box-shadow: 0 6px 16px rgba(0, 86, 179, 0.08);
+}
+
+.card-header-custom {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--card-border);
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+}
+
+/* Stats Cards */
+.stat-card {
+    border-radius: 12px;
+    padding: 1.25rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card.blue {
+    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+}
+
+.stat-card.teal {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+}
+
+.stat-card.green {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+}
+
+.stat-card.orange {
+    background: linear-gradient(135deg, #fd7e14 0%, #d65b00 100%);
+}
+
+.stat-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+}
+
+/* Badges */
+.badge-available {
+    background-color: var(--badge-available-bg);
+    color: var(--badge-available-text);
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid rgba(6, 95, 70, 0.2);
+}
+
+.badge-unavailable {
+    background-color: var(--badge-unavailable-bg);
+    color: var(--badge-unavailable-text);
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid rgba(153, 27, 27, 0.2);
+}
+
+.badge-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.badge-status-requested {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.badge-status-issued {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.badge-status-returned {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.badge-status-cancelled {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+/* Tables */
+.table-custom {
+    vertical-align: middle;
+}
+
+.table-custom th {
+    background-color: #f1f5f9;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--card-border);
+}
+
+/* Footer */
+footer {
+    background-color: #ffffff;
+    border-top: 1px solid var(--card-border);
+    padding: 1.25rem 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}

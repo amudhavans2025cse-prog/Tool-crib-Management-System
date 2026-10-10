@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — Issue Request Management (FR4, FR5, FR7){% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="bi bi-inbox me-2"></i>Issue Request Management
+                </h3>
+                <p class="text-muted mb-0">FR4, FR5, FR7 — Validate member status, phone, loan limits, tool availability, and confirm valid issue requests.</p>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('admin.requests_management') }}" class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+                <a href="{{ url_for('admin.requests_management', status='REQUESTED') }}" class="btn btn-sm {% if current_status == 'REQUESTED' %}btn-warning{% else %}btn-outline-warning{% endif %}">Pending</a>
+                <a href="{{ url_for('admin.requests_management', status='ISSUED') }}" class="btn btn-sm {% if current_status == 'ISSUED' %}btn-success{% else %}btn-outline-success{% endif %}">Issued</a>
+                <a href="{{ url_for('admin.requests_management', status='CANCELLED') }}" class="btn btn-sm {% if current_status == 'CANCELLED' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Cancelled</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Requests Table -->
+<div class="card card-custom">
+    <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-list-check me-2 text-primary"></i>Member Issue Requests ({{ requests | length }})</span>
+        <span class="text-muted small">Atomic validation & transaction safety guaranteed (BR9)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-custom table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Req ID</th>
+                        <th>Member Details</th>
+                        <th>Tool Requested</th>
+                        <th>Tool Availability</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th class="text-end pe-4">Admin Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td>
+                            <code>{{ req.id }}</code>
+                        </td>
+                        <td>
+                            <strong>{{ req.member_name }}</strong>
+                            <br><small class="text-muted">ID: {{ req.member_id }} · 📞 {{ req.member_phone }}</small>
+                            <br><span class="badge {% if req.membership_status == 'ACTIVE' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} small">
+                                Status: {{ req.membership_status }}
+                            </span>
+                            <span class="badge {% if (req.member_active_loans or 0) >= 5 %}bg-danger{% else %}bg-primary-subtle text-primary{% endif %} small ms-1">
+                                Loans: {{ req.member_active_loans or 0 }}/5
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ req.item_title }}</strong>
+                            <br><small class="text-muted">ID: {{ req.item_id }} · {{ req.item_category }}</small>
+                        </td>
+                        <td>
+                            {% if req.item_available == 1 %}
+                            <span class="badge-available">Available</span>
+                            {% else %}
+                            <span class="badge-unavailable">Unavailable</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.status == 'REQUESTED' %}
+                            <span class="badge badge-status-requested">Requested</span>
+                            {% elif req.status == 'ISSUED' %}
+                            <span class="badge badge-status-issued">Issued</span>
+                            {% elif req.status == 'CANCELLED' %}
+                            <span class="badge badge-status-cancelled">Cancelled</span>
+                            {% elif req.status == 'REJECTED' %}
+                            <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ req.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ req.created_at }}</small>
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if req.status == 'REQUESTED' %}
+                            <div class="d-inline-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#confirmModal{{ loop.index }}">
+                                    <i class="bi bi-check-lg me-1"></i> Confirm
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loop.index }}">
+                                    <i class="bi bi-x-lg me-1"></i> Reject
+                                </button>
+                            </div>
+
+                            <!-- Confirmation Modal with Date Override option -->
+                            <div class="modal fade text-start" id="confirmModal{{ loop.index }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form action="{{ url_for('admin.confirm_request', request_id=req.id) }}" method="POST">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold">Confirm Issue — {{ req.id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="alert alert-light border small mb-3">
+                                                    <div><strong>Member:</strong> {{ req.member_name }} ({{ req.member_id }})</div>
+                                                    <div><strong>Member Active Loans:</strong> {{ req.member_active_loans or 0 }}/5</div>
+                                                    <div><strong>Tool:</strong> {{ req.item_title }} ({{ req.item_id }})</div>
+                                                    <div><strong>Current Tool Availability:</strong> {{ 'Available' if req.item_available == 1 else 'Unavailable' }}</div>
+                                                </div>
+
+                                                {% if (req.member_active_loans or 0) >= 5 %}
+                                                <div class="alert alert-danger py-2 small mb-3">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Warning:</strong> Member has already reached the maximum limit of 5 active loans (BR1). Confirmation will be rejected by backend invariants.
+                                                </div>
+                                                {% endif %}
+
+                                                {% if req.item_available != 1 %}
+                                                <div class="alert alert-danger py-2 small mb-3">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Warning:</strong> Tool is currently unavailable (BR2). Confirmation will be rejected.
+                                                </div>
+                                                {% endif %}
+
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Issue Date (Optional Override for testing)</label>
+                                                    <input type="date" name="issue_date" class="form-control" value="">
+                                                    <div class="form-text">Defaults to today's date if left blank. Due date is set to +14 days automatically.</div>
+                                                </div>
+
+                                                <div class="bg-light p-3 rounded small text-muted">
+                                                    <strong class="d-block text-dark mb-1">Pre-flight Verification checks performed on submission:</strong>
+                                                    <ul class="mb-0 ps-3">
+                                                        <li>Re-check tool is active and available (BR2, BR3).</li>
+                                                        <li>Re-check member loan limit < 5 (BR1).</li>
+                                                        <li>Re-check member is ACTIVE with 10-digit phone (BR7).</li>
+                                                        <li>Capture snapshot of tool master data (BR4).</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-check2-circle me-1"></i> Confirm Issue
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rejection Modal -->
+                            <div class="modal fade text-start" id="rejectModal{{ loop.index }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form action="{{ url_for('admin.reject_request', request_id=req.id) }}" method="POST">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold text-danger">Reject Request — {{ req.id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="small text-muted mb-3">
+                                                    Are you sure you want to reject this request for <strong>{{ req.item_title }}</strong> submitted by <strong>{{ req.member_name }}</strong>?
+                                                </p>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Rejection Reason (Optional)</label>
+                                                    <input type="text" name="reason" class="form-control" placeholder="e.g. Tool under maintenance / loan limit exceeded">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-x-circle me-1"></i> Reject Request
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted small">No actions pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-2 text-secondary d-block mb-2"></i>
+                            No requests found matching criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail — Transaction Status History (FR5, FR10){% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="bi bi-clock-history me-2"></i>Transaction Status Audit Trail
+                </h3>
+                <p class="text-muted mb-0">FR5 & FR10 — Immutable historical log of all loan requests, issue confirmations, cancellations, and returns.</p>
+            </div>
+            
+            <!-- Reference ID Filter -->
+            <form method="GET" action="{{ url_for('admin.status_history') }}" class="d-flex align-items-center gap-2">
+                <input type="text" name="ref_id" class="form-control form-control-sm" placeholder="Filter by Request/Loan ID" value="{{ ref_id or '' }}">
+                <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                {% if ref_id %}
+                <a href="{{ url_for('admin.status_history') }}" class="btn btn-sm btn-outline-secondary" title="Clear Filter"><i class="bi bi-x"></i></a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-journal-text me-2 text-primary"></i>Audit Log Entries ({{ history | length }})</span>
+        <span class="badge bg-light text-muted border">Persistent SQLite Audit Trail</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-custom table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Log ID</th>
+                        <th>Reference ID</th>
+                        <th>Actor / Initiator</th>
+                        <th>Status Transition</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in history %}
+                    <tr>
+                        <td>
+                            <code>#{{ item.id }}</code>
+                        </td>
+                        <td>
+                            <strong><code>{{ item.reference_id }}</code></strong>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">{{ item.actor_name or item.actor_id }}</span>
+                            <span class="badge {% if item.actor_role == 'Admin' %}bg-warning-subtle text-warning-emphasis border border-warning-subtle{% else %}bg-primary-subtle text-primary border border-primary-subtle{% endif %} ms-1 small">
+                                {{ item.actor_role or 'System' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.old_status %}
+                            <span class="badge bg-secondary-subtle text-secondary border">{{ item.old_status }}</span>
+                            <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                            {% else %}
+                            <span class="badge bg-light text-muted border">INITIAL</span>
+                            <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                            {% endif %}
+
+                            {% if item.new_status == 'REQUESTED' %}
+                            <span class="badge badge-status-requested">{{ item.new_status }}</span>
+                            {% elif item.new_status == 'ISSUED' %}
+                            <span class="badge badge-status-issued">{{ item.new_status }}</span>
+                            {% elif item.new_status == 'RETURNED' %}
+                            <span class="badge badge-status-returned">{{ item.new_status }}</span>
+                            {% elif item.new_status == 'CANCELLED' %}
+                            <span class="badge badge-status-cancelled">{{ item.new_status }}</span>
+                            {% else %}
+                            <span class="badge bg-info text-dark">{{ item.new_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ item.event_at }}</small>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-2 text-secondary d-block mb-2"></i>
+                            No status transition logs recorded.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

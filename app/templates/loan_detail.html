@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Loan Details — {{ loan.id }}{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                {% if session_role == 'Admin' %}
+                <a href="{{ url_for('admin.loans_management', as_of_date=simulated_date) }}" class="btn btn-sm btn-outline-secondary mb-2">
+                    <i class="bi bi-arrow-left me-1"></i> Back to All Loans
+                </a>
+                {% else %}
+                <a href="{{ url_for('member.my_loans', as_of_date=simulated_date) }}" class="btn btn-sm btn-outline-secondary mb-2">
+                    <i class="bi bi-arrow-left me-1"></i> Back to My Loans
+                </a>
+                {% endif %}
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="bi bi-file-earmark-text me-2"></i>Loan Details: <code>{{ loan.id }}</code>
+                </h3>
+                <p class="text-muted mb-0">FR3 — Exact loan snapshot, due date tracking, and overdue fine breakdown.</p>
+            </div>
+            <div>
+                {% if loan.status == 'ISSUED' %}
+                <span class="badge badge-status-issued fs-6">Status: ISSUED</span>
+                {% else %}
+                <span class="badge badge-status-returned fs-6">Status: RETURNED</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Tool Snapshot & Issue Conditions -->
+    <div class="col-lg-7">
+        <div class="card card-custom mb-4">
+            <div class="card-header card-header-custom">
+                <span class="fw-bold text-primary"><i class="bi bi-camera me-2"></i>Tool Snapshot & Conditions (BR4)</span>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 200px;">Tool Identifier:</td>
+                            <td><code class="fw-bold fs-6">{{ loan.item_id }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Item Title Snapshot:</td>
+                            <td><strong class="fs-6 text-dark">{{ loan.item_title_snapshot }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Current Master Title:</td>
+                            <td>
+                                <span>{{ loan.current_item_title or loan.item_title_snapshot }}</span>
+                                {% if loan.current_item_title and loan.current_item_title != loan.item_title_snapshot %}
+                                <span class="badge bg-info text-dark ms-2"><i class="bi bi-info-circle me-1"></i>Master Title Changed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Borrower Member:</td>
+                            <td><strong>{{ loan.member_name }}</strong> ({{ loan.member_id }})</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Member Phone:</td>
+                            <td>{{ loan.member_phone }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Associated Request:</td>
+                            <td><code>{{ loan.request_id or 'Direct Issue' }}</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-custom">
+            <div class="card-header card-header-custom">
+                <span class="fw-bold text-primary"><i class="bi bi-calendar-range me-2"></i>Loan Lifecycle Dates</span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small text-uppercase d-block mb-1">Issue Date</span>
+                            <strong class="fs-6">{{ loan.issue_date }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small text-uppercase d-block mb-1">Due Date (14 Days)</span>
+                            <strong class="fs-6 {% if loan.is_overdue and loan.status == 'ISSUED' %}text-danger{% else %}text-primary{% endif %}">
+                                {{ loan.due_date }}
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small text-uppercase d-block mb-1">Return Date</span>
+                            <strong class="fs-6 {% if loan.return_date %}text-success{% else %}text-muted{% endif %}">
+                                {{ loan.return_date or 'Not Returned' }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Fine Calculation Breakdown (BR5, BR6) -->
+    <div class="col-lg-5">
+        <div class="card card-custom h-100 border-top border-4 {% if loan.fine_amount > 0 %}border-danger{% else %}border-success{% endif %}">
+            <div class="card-header card-header-custom">
+                <span class="fw-bold"><i class="bi bi-currency-rupee me-1"></i>Overdue Fine Breakdown (BR6)</span>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-3 mb-3 border-bottom">
+                    <span class="text-muted small text-uppercase fw-bold d-block mb-1">Calculated Fine</span>
+                    <h1 class="fw-bold {% if loan.fine_amount > 0 %}text-danger{% else %}text-success{% endif %} mb-0">
+                        {{ loan.fine_amount | currency }}
+                    </h1>
+                    {% if loan.fine_amount > 0 %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-2">
+                        {{ loan.overdue_days }} Days Overdue
+                    </span>
+                    {% else %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle mt-2">
+                        No Overdue Fines
+                    </span>
+                    {% endif %}
+                </div>
+
+                <h6 class="fw-bold mb-3 small text-uppercase text-muted">Business Rule Verification (BR6)</h6>
+                <ul class="list-group list-group-flush small mb-4">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>Standard Loan Period:</span>
+                        <strong>14 Days</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>Due Date:</span>
+                        <strong>{{ loan.due_date }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>Evaluation Date:</span>
+                        <strong>{{ loan.calculation_date }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>Days Overdue:</span>
+                        <strong>{{ loan.overdue_days }} days</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span>Fine Rate:</span>
+                        <strong>₹5.00 / overdue day</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 fw-bold border-top">
+                        <span>Total Calculation:</span>
+                        <span>{{ loan.overdue_days }} × ₹5.00 = {{ loan.fine_amount | currency }}</span>
+                    </li>
+                </ul>
+
+                <div class="p-3 bg-light rounded text-muted small">
+                    <i class="bi bi-info-circle me-1 text-primary"></i>
+                    <strong>Rule note:</strong> Fines accrue strictly after the 14-day due date passes. A tool returned on or before its due date incurs ₹0.00 fine.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

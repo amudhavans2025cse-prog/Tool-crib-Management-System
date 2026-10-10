@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Requests (FR2){% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold text-primary mb-1">
+            <i class="bi bi-journal-plus me-2"></i>My Issue Requests
+        </h3>
+        <p class="text-muted mb-0">FR2 — Create and cancel your own issue requests. Requests are validated by administrators before loan confirmation.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Create Request Card -->
+    <div class="col-lg-4">
+        <div class="card card-custom h-100">
+            <div class="card-header card-header-custom">
+                <span class="fw-bold text-primary"><i class="bi bi-plus-circle me-2"></i>Create New Request</span>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('member.create_request') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Select Tool</label>
+                        <select name="item_id" class="form-select" required>
+                            <option value="">-- Choose an Available Tool --</option>
+                            {% for tool in available_tools %}
+                            <option value="{{ tool.id }}">{{ tool.id }} — {{ tool.title }} ({{ tool.category }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Only active and currently available tools may be requested (BR2).</div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded mb-3 small text-muted">
+                        <strong class="d-block text-dark mb-1"><i class="bi bi-shield-check text-primary me-1"></i>Validation Rules Enforced:</strong>
+                        <ul class="mb-0 ps-3">
+                            <li>Maximum 5 active loans limit (BR1).</li>
+                            <li>No duplicate pending requests for the same tool (FR2).</li>
+                            <li>Phone must be 10 digits & membership ACTIVE (BR7).</li>
+                        </ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-send me-1"></i> Submit Issue Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="col-lg-8">
+        <div class="card card-custom h-100">
+            <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>My Request History</span>
+                <span class="badge bg-light text-dark border">{{ requests | length }} requests</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Tool</th>
+                                <th>Requested On</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requests %}
+                            <tr>
+                                <td>
+                                    <code>{{ req.id }}</code>
+                                </td>
+                                <td>
+                                    <strong>{{ req.item_title }}</strong>
+                                    <br><small class="text-muted">{{ req.item_id }} · {{ req.item_category }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ req.created_at }}</small>
+                                </td>
+                                <td>
+                                    {% if req.status == 'REQUESTED' %}
+                                    <span class="badge badge-status-requested">Requested</span>
+                                    {% elif req.status == 'ISSUED' %}
+                                    <span class="badge badge-status-issued">Issued</span>
+                                    {% elif req.status == 'CANCELLED' %}
+                                    <span class="badge badge-status-cancelled">Cancelled</span>
+                                    {% elif req.status == 'REJECTED' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ req.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if req.status == 'REQUESTED' %}
+                                    <form action="{{ url_for('member.cancel_request', request_id=req.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this request?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Cancel
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted small">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-2 text-secondary d-block mb-2"></i>
+                                    You have not submitted any issue requests yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
